@@ -1,62 +1,61 @@
 use bevy::{
     asset::{AssetServer, Handle}, ecs::{
-        component::Component, event::{Event, EventWriter}, query::With, system::{Commands, Query, Res, ResMut}
+        bundle::Bundle, component::Component, event::{Event, EventWriter}, query::With, system::{command, Commands, Query, Res, ResMut}
     }, image::Image, input::{keyboard::KeyCode, ButtonInput}, math::{Vec2, Vec3}, sprite::Sprite, transform::components::Transform
 };
 
+use super::{PlayerInputEvent};
+
 #[derive(Component)]
-pub struct Player;
+pub struct Player{
+    pub id : u8,
+    pub cord: (f32,f32)
+}
 
-
-
-pub fn spawn_player(
-   mut commands: Commands,
-   //mut meshes: ResMut<Assets<Mesh>>,
-   //mut materials: ResMut<Assets<StandardMaterial>>,
-   asset_server: Res<AssetServer>,
-   
-){
-    let handle_image:Handle<Image> = asset_server.load("asset03player.png"); 
-    let player = (Sprite{
-        image:handle_image,
-        custom_size: Some(Vec2::new(5.0, 5.0)),
+pub fn player_bandle(start_spawn: (f32,f32),sprite_handle: Handle<Image>)-> impl Bundle{
+    let result  = (Sprite{
+        image:sprite_handle,
+        custom_size: Some(Vec2 { x: 5.0, y: 5.0 }),
         ..Default::default()
-    },Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3 { x: 20.0, y: 20.0, z: 20.0 }),Player{}
-
+    }
+    ,Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3{x: 20.0,y : 20.0,z: 20.0}),
+    Player{id : 0 ,cord : start_spawn}
     );
-    commands.spawn(player);
-}
-#[derive(Event)]
-pub enum MovePlayer{
-    KeyA,
-    KeyD,
-    KeyW,
-    KeyS,
+  return result;
 }
 
 
-pub fn move_player(
+pub fn client_input(mut command: Commands, asset : Res<AssetServer>){
+    command.spawn(player_bandle((0.0,0.0), asset.load("asset03player.png")));
+}
+
+pub fn capture_key_player(
     mut _command: Commands,
-    mut player: Query<&mut Transform, With<Player>>,
-    mut sender: EventWriter<MovePlayer>,
+    mut player: Query<&Player, With<Player>>,
+    mut sender: EventWriter<PlayerInputEvent>,
     key_board_input: Res<ButtonInput<KeyCode>>,
 ) {
-    let  Ok(mut player_transform) = player.single_mut() else {
-        dbg!("Erro, não unico");
+    let Ok(player_info) = player.single_mut() else {
+        dbg!("Erro, não é único");
         return;
     };
-    let mut vec_tran : Vec3 = player_transform.translation;
-    if key_board_input.pressed(KeyCode::KeyA) {
-        vec_tran.x += -1.0;
+
+    for key in [
+        KeyCode::KeyW,
+        KeyCode::KeyA,
+        KeyCode::KeyS,
+        KeyCode::KeyD,
+        KeyCode::ArrowUp,
+        KeyCode::ArrowDown,
+        KeyCode::ArrowLeft,
+        KeyCode::ArrowRight,
+    ] {
+        if key_board_input.pressed(key) {
+            sender.write(PlayerInputEvent {
+                id_: player_info.id,
+                key,
+            });
+        }
     }
-    if key_board_input.pressed(KeyCode::KeyW) {
-        vec_tran.y += 1.0; 
-    }
-    if key_board_input.pressed(KeyCode::KeyS) {
-        vec_tran.y += -1.0; 
-    }
-    if key_board_input.pressed(KeyCode::KeyD) {
-        sender.write(MovePlayer::KeyD);
-    }
-    player_transform.translation = vec_tran;
 }
+ 
