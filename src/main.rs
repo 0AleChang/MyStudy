@@ -1,7 +1,8 @@
 use bevy::prelude::*;
-mod player;
-mod world;
-mod cam;
+
+mod neuralnet;
+mod game;
+
 fn main() {
     App::new()
     .add_plugins(DefaultPlugins)
