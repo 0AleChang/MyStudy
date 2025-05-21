@@ -18,8 +18,8 @@ impl NetWork {
         let mut weight : Vec<Matrix> = vec![];
 
 
-        
-        NetWork { layer, weight: (), biases: (), data: (), activation, learning_rate }
+
+        NetWork { layer, weight: todo!(), biases: todo!(), data: todo!(), activation, learning_rate }
     }
 
 }
